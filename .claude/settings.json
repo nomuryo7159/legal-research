@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(rm -rf output)",
+      "Bash(mkdir -p output)",
+      "Bash(rm -rf output && mkdir output && ls output)"
+    ]
+  }
+}

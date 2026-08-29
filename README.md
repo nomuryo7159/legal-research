@@ -1,6 +1,6 @@
 # リーガルリサーチ自動化プロジェクト
 
-Claude Code のマルチエージェント機能を使って、法務相談を受け取り、事実整理・論点抽出・法源調査・リスク分析の4段階を自動で実行するリーガルリサーチシステムです。
+Claude CodeまたはCodexのマルチエージェント機能を使って、法務相談を受け取り、事実整理、論点抽出、法源調査、リスク分析の4段階を順番に実行するリーガルリサーチシステムです。
 
 ---
 
@@ -10,7 +10,7 @@ Claude Code のマルチエージェント機能を使って、法務相談を�
 
 | ステップ | エージェント     | 出力ファイル            | 内容                                     |
 | -------- | ---------------- | ----------------------- | ---------------------------------------- |
-| 1        | fact-structuring | `output/01_facts.md`    | 事実関係の整理（関係主体・行為・不明点） |
+| 1        | fact-structuring | `output/01_fact.md`     | 事実関係の整理（関係主体・行為・不明点） |
 | 2        | issue-spotting   | `output/02_issues.md`   | 法的論点の網羅的な抽出                   |
 | 3        | source-research  | `output/03_sources.md`  | 関連条文・判例・ガイドラインの調査       |
 | 4        | legal-analysis   | `output/04_analysis.md` | 評価軸ごとのリスク分析・判定表           |
@@ -39,7 +39,7 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 
 ### 2. 依存パッケージのインストール
 
-プロジェクトルート（`legal_research/`）で以下を実行します。
+プロジェクトルート（`legal-research/`）で以下を実行します。
 
 ```bash
 uv sync
@@ -54,11 +54,12 @@ uv run python main.py
 # => Hello from legal-reserach!
 ```
 
-上記が表示されれば環境構築は完了です。以降の Claude Code によるリサーチは、この仮想環境を自動的に使用します。
+上記が表示されれば環境構築は完了です。
+Claude CodeとCodexは、このプロジェクトにある指示、スキル、サブエージェント定義をそれぞれ読み取ってリサーチを実行します。
 
 ---
 
-## 使い方：VS Code 拡張機能からの操作
+## Claude Codeからの操作
 
 ### 1. 拡張機能のインストール
 
@@ -113,15 +114,41 @@ Claude Code が4つのエージェントを順番に実行します。各エー�
 
 実行完了後、`output/` フォルダ内に分析レポートが生成されます。
 
+## Codexからの操作
+
+### 1. プロジェクトを開く
+
+Codexでこのリポジトリをワークスペースとして開きます。
+Codexは `AGENTS.md`、`.agents/skills/legal-research-flow/SKILL.md`、`.codex/agents/` 以下の定義を使用します。
+
+### 2. リサーチ内容を入力する
+
+Claude Codeと同じ形式で、相談事項と参照情報を入力します。
+たとえば、次のように依頼します。
+
+```text
+以下の相談事項についてリーガルリサーチをお願いします。
+
+【相談事項】
+（相談文を記載）
+
+【参照情報】
+（資料の内容、ファイル、URLなどを記載）
+```
+
+Codexは4つのサブエージェントを順番に実行します。
+各工程の完了後に内容を確認し、次の工程へ進むよう指示してください。
+実行完了後、`output/` フォルダ内に分析レポートが生成されます。
+
 ---
 
 ## 出力ファイルの読み方
 
-### output/01_facts.md — 事実整理
+### output/01_fact.md：事実整理
 
 相談文から事実のみを抽出・整理したメモです。関係主体、行為の内容、相談者の主観評価、不明点が分離されており、「何がわかっていて何が足りないか」を把握できます。
 
-### output/02_issues.md — 論点抽出
+### output/02_issues.md：論点抽出
 
 以下の6つの評価軸から法的論点を網羅的に洗い出したリストです：
 
@@ -132,11 +159,11 @@ Claude Code が4つのエージェントを順番に実行します。各エー�
 - ガバナンス・コンプライアンス
 - 業法上の適合性
 
-### output/03_sources.md — 法源調査
+### output/03_sources.md：法源調査
 
 各論点に関連する条文・判例・ガイドライン・行政資料の調査結果です。引用元が明示されています。
 
-### output/04_analysis.md — リスク分析
+### output/04_analysis.md：リスク分析
 
 法源と事実を照合した評価軸ごとのリスク判定表です。リスク程度（高・中・低）と判断理由が記載されています。
 
@@ -145,17 +172,31 @@ Claude Code が4つのエージェントを順番に実行します。各エー�
 ## プロジェクト構成
 
 ```
-legal_research/
-├── CLAUDE.md                  # Claude Code への動作指示（編集不要）
+legal-research/
+├── CLAUDE.md                  # Claude Codeへの動作指示
+├── AGENTS.md                  # Codexへの動作指示
 ├── README.md                  # このファイル
 ├── .claude/
+│   ├── skills/
+│   │   └── legal-research-flow/
+│   │       └── SKILL.md       # Claude Code用の調査フロー
 │   └── agents/
 │       ├── fact-structuring.md   # 事実整理エージェントの定義
 │       ├── issue-spotting.md     # 論点抽出エージェントの定義
 │       ├── source-research.md    # 法源調査エージェントの定義
 │       └── legal-analysis.md     # リスク分析エージェントの定義
+├── .agents/
+│   └── skills/
+│       └── legal-research-flow/
+│           └── SKILL.md       # Codex用の調査フロー
+├── .codex/
+│   └── agents/
+│       ├── fact-structuring.toml
+│       ├── issue-spotting.toml
+│       ├── source-research.toml
+│       └── legal-analysis.toml
 └── output/                    # 生成されるレポート（実行ごとに上書き）
-    ├── 01_facts.md
+    ├── 01_fact.md
     ├── 02_issues.md
     ├── 03_sources.md
     └── 04_analysis.md
